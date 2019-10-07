@@ -1,3 +1,4 @@
 .idea/
 target/
 src/main/java/com.codve/Upload.java
+*.DS_Store*
