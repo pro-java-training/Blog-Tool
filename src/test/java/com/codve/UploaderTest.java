@@ -1,6 +1,7 @@
 package com.codve;
 
 import com.baidubce.services.bos.BosClient;
+import com.baidubce.services.bos.model.BosObjectSummary;
 import com.baidubce.services.bos.model.DeleteMultipleObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
@@ -115,12 +116,18 @@ public class UploaderTest {
         request.setMaxKeys(1000);
         doReturn(client).when(uploader).getClient();
         doReturn(request).when(uploader).getListRequest();
-        uploader.listFiles();
+
+        // 构造返回结果
+        List<BosObjectSummary> contents = new ArrayList<>();
+        contents.add(mock(BosObjectSummary.class));
 
         ListObjectsResponse response = mock(ListObjectsResponse.class);
-        response.setTruncated(false);
-        doReturn(request).when(client).listObjects(request);
+        response.setContents(contents);
 
+        response.setTruncated(false);
+        doReturn(response).when(client).listObjects(request);
+
+        uploader.listFiles();
         verify(client, times(1)).listObjects(request);
 
     }
