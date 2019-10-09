@@ -39,7 +39,11 @@ public class Uploader {
         config.setEndpoint(endPoint);
         config.setProtocol(Protocol.HTTPS);
         config.setConnectionTimeoutInMillis(3000);
-        client = new BosClient(config);
+        setClient(new BosClient(config));
+    }
+
+    public void setClient(BosClient client) {
+        this.client = client;
     }
 
     public BosClient getClient() {
@@ -47,8 +51,13 @@ public class Uploader {
     }
 
     private void setDeleteRequest() {
-        this.deleteRequest = new DeleteMultipleObjectsRequest();
-        this.deleteRequest.setBucketName(bucket);
+        DeleteMultipleObjectsRequest tmpDeleteRequest = new DeleteMultipleObjectsRequest();
+        tmpDeleteRequest.setBucketName(bucket);
+        setDeleteRequest(tmpDeleteRequest);
+    }
+
+    public void setDeleteRequest(DeleteMultipleObjectsRequest deleteRequest) {
+        this.deleteRequest = deleteRequest;
     }
 
     public DeleteMultipleObjectsRequest getDeleteRequest() {
@@ -56,8 +65,13 @@ public class Uploader {
     }
 
     public void setListRequest() {
-        this.listRequest = new ListObjectsRequest(bucket);
-        this.listRequest.setMaxKeys(1000);
+        ListObjectsRequest tmpListRequest = new ListObjectsRequest(bucket);
+        tmpListRequest.setMaxKeys(1000);
+        setListRequest(tmpListRequest);
+    }
+
+    public void setListRequest(ListObjectsRequest listRequest) {
+        this.listRequest = listRequest;
     }
 
     public ListObjectsRequest getListRequest() {
@@ -66,16 +80,16 @@ public class Uploader {
 
 
     public void putFile(String key, File file){
-        getClient().putObject(bucket, key, file);
+        client.putObject(bucket, key, file);
     }
 
     public void deleteFile(String key){
-        getClient().deleteObject(bucket, key);
+        client.deleteObject(bucket, key);
     }
 
     public void deleteFiles(List<String> files) {
-        getDeleteRequest().setObjectKeys(files);
-        getClient().deleteMultipleObjects(getDeleteRequest());
+        deleteRequest.setObjectKeys(files);
+        client.deleteMultipleObjects(deleteRequest);
     }
 
     public List<String> listFiles() {
@@ -83,16 +97,16 @@ public class Uploader {
         ListObjectsResponse response;
         boolean isTruncated = true;
         while (isTruncated) {
-            response = getClient().listObjects(getListRequest());
+            response = client.listObjects(listRequest);
             for (BosObjectSummary summary : response.getContents()) {
                 files.add(summary.getKey());
             }
             isTruncated = response.isTruncated();
             if (response.getNextMarker() != null) {
-                getListRequest().withMarker(response.getNextMarker());
+                listRequest.withMarker(response.getNextMarker());
             }
         }
-        getListRequest().setMarker("");
+        listRequest.setMarker("");
         return files;
     }
 }

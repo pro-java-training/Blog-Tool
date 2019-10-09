@@ -10,6 +10,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,7 @@ public class UploaderTest {
         uploader = spy(new Uploader(accessId, accessSecret, endPoint, bucket));
         file = mock(File.class);
         client = mock(BosClient.class);
+        uploader.setClient(client);
     }
 
     /**
@@ -51,7 +54,6 @@ public class UploaderTest {
     @Test
     public void putFile(){
         String key = file.getName();
-        doReturn(client).when(uploader).getClient();
         uploader.putFile(key, file);
         verify(client, times(1)).putObject(bucket, key, file);
     }
@@ -62,7 +64,6 @@ public class UploaderTest {
     @Test(expected = Exception.class)
     public void WhenPutFileFailedThenException(){
         String key = file.getName();
-        doReturn(client).when(uploader).getClient();
         doThrow(Exception.class).when(client).putObject(bucket, key, file);
         uploader.putFile(key, file);
     }
@@ -73,7 +74,6 @@ public class UploaderTest {
     @Test
     public void deleteFile() {
         String key = file.getName();
-        doReturn(client).when(uploader).getClient();
         uploader.deleteFile(key);
         verify(client, times(1)).deleteObject(bucket, key);
     }
@@ -84,7 +84,6 @@ public class UploaderTest {
     @Test(expected = Exception.class)
     public void whenDeleteFileFailedThenException() throws Exception{
         String key = file.getName();
-        doReturn(client).when(uploader).getClient();
         doThrow(Exception.class).when(client).deleteObject(bucket, key);
         uploader.deleteFile(key);
     }
@@ -100,10 +99,9 @@ public class UploaderTest {
         DeleteMultipleObjectsRequest request = new DeleteMultipleObjectsRequest();
         request.setBucketName(bucket);
         request.setObjectKeys(files);
-        doReturn(client).when(uploader).getClient();
-        doReturn(request).when(uploader).getDeleteRequest();
-        uploader.deleteFiles(files);
+        uploader.setDeleteRequest(request);
 
+        uploader.deleteFiles(files);
         verify(client, times(1)).deleteMultipleObjects(request);
     }
 
@@ -114,22 +112,27 @@ public class UploaderTest {
     public void listFiles() {
         ListObjectsRequest request = new ListObjectsRequest(bucket);
         request.setMaxKeys(1000);
-        doReturn(client).when(uploader).getClient();
-        doReturn(request).when(uploader).getListRequest();
+        uploader.setListRequest(request);
 
         // 构造返回结果
+        BosObjectSummary summary = new BosObjectSummary();
+        summary.setKey("key");
+
         List<BosObjectSummary> contents = new ArrayList<>();
-        contents.add(mock(BosObjectSummary.class));
+        contents.add(summary);
 
-        ListObjectsResponse response = mock(ListObjectsResponse.class);
+        ListObjectsResponse response = new ListObjectsResponse();
         response.setContents(contents);
-
+        response.setNextMarker("next");
         response.setTruncated(false);
+
         doReturn(response).when(client).listObjects(request);
 
-        uploader.listFiles();
-        verify(client, times(1)).listObjects(request);
-
+        List<String> files = new ArrayList<>();
+        for (BosObjectSummary tmpSummary : contents) {
+            files.add(tmpSummary.getKey());
+        }
+        assertEquals(files, uploader.listFiles());
     }
 
 }

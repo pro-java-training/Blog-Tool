@@ -27,19 +27,30 @@ public class GitClient {
     private Git git;
 
     public GitClient(File dir) throws GitAPIException {
-        this.dir = dir;
+        setDir(dir);
         setGit();
         setRepository();
+    }
+
+    public void setDir(File dir) {
+        this.dir = dir;
     }
 
     public void setGit() throws GitAPIException {
         git = Git.init().setDirectory(dir).call();
     }
 
+    public void setGit(Git git) {
+        this.git = git;
+    }
+
     public void setRepository() {
         repository = git.getRepository();
     }
 
+    public void setRepository(Repository repository) {
+        this.repository = repository;
+    }
 
     public Map<String, ChangeType> getFileMap() throws GitAPIException, IOException {
         Map<String, ChangeType> fileMap = new HashMap<>();
